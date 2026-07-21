@@ -14,7 +14,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       return NextResponse.json({ error: firstError }, { status: 400 });
     }
     const { id } = await context.params; const d = parsed.data;
-    const result = await db()`UPDATE teams SET name=${d.name}, group_name=${d.groupName}, color=${d.color}, captain=${d.captain}, active=${d.active}, updated_at=NOW() WHERE id=${id} RETURNING id`;
+    const result = await db()`UPDATE teams SET name=${d.name}, group_name=${d.groupName}, color=${d.color}, captain=${d.captain}, active=${d.active} WHERE id=${id} RETURNING id`;
     if (!result.length) return NextResponse.json({ error: "Equipe não encontrada." }, { status: 404 });
     return NextResponse.json({ ok: true });
   } catch (error) { return apiError(error); }

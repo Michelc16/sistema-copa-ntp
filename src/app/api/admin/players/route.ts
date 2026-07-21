@@ -15,8 +15,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: firstError }, { status: 400 });
     }
     const d = parsed.data; const id = randomUUID();
-    const [{ next_order }] = await db()<[{ next_order: number }]>`SELECT COALESCE(MAX(sort_order),0)+1 AS next_order FROM players WHERE team_id=${d.teamId}`;
-    await db()`INSERT INTO players (id,team_id,name,shirt_number,is_captain,active,sort_order,created_at) VALUES (${id},${d.teamId},${d.name},${d.shirtNumber},${d.isCaptain},TRUE,${next_order},NOW())`;
+    const sql = db();
+    const inserted = await sql.begin(async (tx) => {
+      const team = await tx<{ id: string }[]>`SELECT id FROM teams WHERE id=${d.teamId} FOR UPDATE`;
+      if (!team.length) return false;
+
+      const [{ next_order }] = await tx<[{ next_order: number }]>`SELECT COALESCE(MAX(sort_order),0)+1 AS next_order FROM players WHERE team_id=${d.teamId}`;
+      if (d.isCaptain) {
+        await tx`UPDATE players SET is_captain=FALSE WHERE team_id=${d.teamId}`;
+      }
+      await tx`INSERT INTO players (id,team_id,name,shirt_number,is_captain,active,sort_order) VALUES (${id},${d.teamId},${d.name},${d.shirtNumber},${d.isCaptain},TRUE,${next_order})`;
+      if (d.isCaptain) {
+        await tx`UPDATE teams SET captain=${d.name} WHERE id=${d.teamId}`;
+      }
+      return true;
+    });
+    if (!inserted) return NextResponse.json({ error: "Equipe não encontrada." }, { status: 404 });
     return NextResponse.json({ ok: true, id });
   } catch (error) { return apiError(error); }
 }

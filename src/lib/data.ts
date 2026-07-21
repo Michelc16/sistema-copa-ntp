@@ -5,7 +5,7 @@ import type { Match, Player, StandingAdjustment, Team, Tournament, TournamentRul
 
 type DbTournament = {
   id: string; slug: string; name: string; edition: string; subtitle: string; description: string;
-  venue: string; city: string; start_date: string; end_date: string; announcement: string; rules: TournamentRules;
+  venue: string; city: string; start_date: Date | string; end_date: Date | string; announcement: string; rules: TournamentRules;
 };
 type DbTeam = { id: string; tournament_id: string; code: string; name: string; group_name: "A" | "B"; color: string; captain: string; sort_order: number; active: boolean };
 type DbPlayer = { id: string; team_id: string; name: string; shirt_number: number | null; is_captain: boolean; active: boolean; sort_order: number };
@@ -30,12 +30,30 @@ function normalizeDate(value: Date | string) {
   return value instanceof Date ? value.toISOString() : String(value);
 }
 
+export function normalizeDateOnly(value: Date | string) {
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+
+  const raw = String(value).trim();
+  const isoDate = raw.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+  if (isoDate) return isoDate;
+
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
+}
+
 export async function getTournamentView(): Promise<TournamentView> {
   if (!hasDatabase()) return demoView();
   try {
     const sql = db();
     const [tournamentRows, teamRows, playerRows, matchRows, adjustmentRows] = await Promise.all([
-      sql<DbTournament[]>`SELECT * FROM tournaments WHERE id = ${tournamentSeed.id} LIMIT 1`,
+      sql<DbTournament[]>`
+        SELECT id, slug, name, edition, subtitle, description, venue, city,
+          start_date::text AS start_date, end_date::text AS end_date,
+          announcement, rules
+        FROM tournaments
+        WHERE id = ${tournamentSeed.id}
+        LIMIT 1
+      `,
       sql<DbTeam[]>`SELECT * FROM teams WHERE tournament_id = ${tournamentSeed.id} ORDER BY sort_order, code`,
       sql<DbPlayer[]>`SELECT p.* FROM players p JOIN teams t ON t.id = p.team_id WHERE t.tournament_id = ${tournamentSeed.id} ORDER BY p.sort_order, p.name`,
       sql<DbMatch[]>`SELECT * FROM matches WHERE tournament_id = ${tournamentSeed.id} ORDER BY scheduled_at, sort_order`,
@@ -53,8 +71,8 @@ export async function getTournamentView(): Promise<TournamentView> {
       description: tournamentRow.description,
       venue: tournamentRow.venue,
       city: tournamentRow.city,
-      startDate: String(tournamentRow.start_date),
-      endDate: String(tournamentRow.end_date),
+      startDate: normalizeDateOnly(tournamentRow.start_date),
+      endDate: normalizeDateOnly(tournamentRow.end_date),
       announcement: tournamentRow.announcement,
       rules: tournamentRow.rules,
     };

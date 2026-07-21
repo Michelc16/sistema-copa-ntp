@@ -62,8 +62,6 @@ export function AdminDashboard({ initialData, email }: { initialData: Tournament
     try { 
       await action(); 
       notify(message);
-      // Aguardar um pouco antes de fazer refresh para garantir consistência
-      await new Promise((resolve) => setTimeout(resolve, 200));
       router.refresh(); 
     } catch(error){ 
       const errorMsg = error instanceof Error ? error.message : "Falha ao salvar.";
@@ -113,18 +111,68 @@ function Field({label,className="",children}:{label:string;className?:string;chi
 
 function TeamPanel({team,busy,save,updateTeam,updatePlayer}:{team:Team;busy:boolean;save:(action:()=>Promise<unknown>,message?:string)=>Promise<void>;updateTeam:(id:string,p:Partial<Team>)=>void;updatePlayer:(tid:string,pid:string,p:Partial<Player>)=>void}){
   const [newName,setNewName]=useState("");
+  function changePlayerRole(player:Player,isCaptain:boolean){
+    if(isCaptain){
+      for(const teammate of team.players){
+        updatePlayer(team.id,teammate.id,{isCaptain:teammate.id===player.id});
+      }
+      updateTeam(team.id,{captain:player.name});
+      return;
+    }
+    updatePlayer(team.id,player.id,{isCaptain:false});
+    if(team.captain===player.name) updateTeam(team.id,{captain:""});
+  }
   async function saveTeam(){await save(()=>requestJson(`/api/admin/teams/${team.id}`,{method:"PATCH",body:JSON.stringify({name:team.name,groupName:team.groupName,color:team.color,captain:team.captain,active:team.active})}),"Equipe atualizada.");}
   async function addPlayer(){if(newName.trim().length<2)return;await save(()=>requestJson("/api/admin/players",{method:"POST",body:JSON.stringify({teamId:team.id,name:newName,shirtNumber:null,isCaptain:false})}),"Atleta adicionado.");setNewName("");}
   async function savePlayer(player:Player){await save(()=>requestJson(`/api/admin/players/${player.id}`,{method:"PATCH",body:JSON.stringify({name:player.name,shirtNumber:player.shirtNumber,isCaptain:player.isCaptain,active:player.active})}),"Atleta atualizado.");}
   async function deletePlayer(player:Player){if(!confirm(`Remover ${player.name} do elenco?`))return;await save(()=>requestJson(`/api/admin/players/${player.id}`,{method:"DELETE"}),"Atleta removido.");}
-  return <section className="admin-panel"><div className="admin-panel-head"><div><h2>{team.code} • {team.name}</h2><p>Edite a equipe e os atletas cadastrados.</p></div><button className="button button-primary button-small" disabled={busy} onClick={saveTeam}><Save size={15}/> Salvar equipe</button></div><div className="form-grid"><Field label="Nome da equipe"><input value={team.name} onChange={(e)=>updateTeam(team.id,{name:e.target.value})}/></Field><Field label="Grupo"><select value={team.groupName} onChange={(e)=>updateTeam(team.id,{groupName:e.target.value as "A"|"B"})}><option>A</option><option>B</option></select></Field><Field label="Cor"><input type="color" value={team.color} onChange={(e)=>updateTeam(team.id,{color:e.target.value})}/></Field><Field label="Capitão / representante"><input value={team.captain} onChange={(e)=>updateTeam(team.id,{captain:e.target.value})}/></Field></div><div className="player-admin-list"><div className="admin-panel-head"><div><h2>Elenco</h2><p>{team.players.length} atletas cadastrados.</p></div></div>{team.players.map((player)=><div className="player-row" key={player.id}><input aria-label="Nome" value={player.name} onChange={(e)=>updatePlayer(team.id,player.id,{name:e.target.value})}/><input aria-label="Camisa" type="number" min="0" max="99" placeholder="Nº" value={player.shirtNumber??""} onChange={(e)=>updatePlayer(team.id,player.id,{shirtNumber:e.target.value===""?null:Number(e.target.value)})}/><select aria-label="Função" value={player.isCaptain?"captain":"player"} onChange={(e)=>updatePlayer(team.id,player.id,{isCaptain:e.target.value==="captain"})}><option value="player">Atleta</option><option value="captain">Capitão</option></select><span className="row-actions"><button className="icon-button save-icon" aria-label="Salvar atleta" onClick={()=>savePlayer(player)} disabled={busy}><Save size={15}/></button><button className="icon-button" aria-label="Remover atleta" onClick={()=>deletePlayer(player)} disabled={busy}><Trash2 size={15}/></button></span></div>)}<div className="player-row add-row"><input placeholder="Nome do novo atleta" value={newName} onChange={(e)=>setNewName(e.target.value)}/><span/><span/><button className="button button-ghost button-small" onClick={addPlayer} disabled={busy||newName.trim().length<2}><Plus size={15}/> Adicionar</button></div></div></section>;
+  return <section className="admin-panel"><div className="admin-panel-head"><div><h2>{team.code} • {team.name}</h2><p>Edite a equipe e os atletas cadastrados.</p></div><button className="button button-primary button-small" disabled={busy} onClick={saveTeam}><Save size={15}/> Salvar equipe</button></div><div className="form-grid"><Field label="Nome da equipe"><input value={team.name} onChange={(e)=>updateTeam(team.id,{name:e.target.value})}/></Field><Field label="Grupo"><select value={team.groupName} onChange={(e)=>updateTeam(team.id,{groupName:e.target.value as "A"|"B"})}><option>A</option><option>B</option></select></Field><Field label="Cor"><input type="color" value={team.color} onChange={(e)=>updateTeam(team.id,{color:e.target.value})}/></Field><Field label="Capitão / representante"><input value={team.captain} onChange={(e)=>updateTeam(team.id,{captain:e.target.value})}/></Field></div><div className="player-admin-list"><div className="admin-panel-head"><div><h2>Elenco</h2><p>{team.players.length} atletas cadastrados. Ao escolher um novo capitão, o anterior volta a ser atleta automaticamente.</p></div></div>{team.players.map((player)=><div className="player-row" key={player.id}><input aria-label="Nome" value={player.name} onChange={(e)=>updatePlayer(team.id,player.id,{name:e.target.value})}/><input aria-label="Camisa" type="number" min="0" max="99" placeholder="Nº" value={player.shirtNumber??""} onChange={(e)=>updatePlayer(team.id,player.id,{shirtNumber:e.target.value===""?null:Number(e.target.value)})}/><select aria-label="Função" value={player.isCaptain?"captain":"player"} onChange={(e)=>changePlayerRole(player,e.target.value==="captain")}><option value="player">Atleta</option><option value="captain">Capitão</option></select><span className="row-actions"><button className="icon-button save-icon" aria-label="Salvar atleta" onClick={()=>savePlayer(player)} disabled={busy}><Save size={15}/></button><button className="icon-button" aria-label="Remover atleta" onClick={()=>deletePlayer(player)} disabled={busy}><Trash2 size={15}/></button></span></div>)}<div className="player-row add-row"><input placeholder="Nome do novo atleta" value={newName} onChange={(e)=>setNewName(e.target.value)}/><span/><span/><button className="button button-ghost button-small" onClick={addPlayer} disabled={busy||newName.trim().length<2}><Plus size={15}/> Adicionar</button></div></div></section>;
 }
 
 function MatchesPanel({matches,teams,busy,save,updateMatch}:{matches:Match[];teams:Team[];busy:boolean;save:(action:()=>Promise<unknown>,message?:string)=>Promise<void>;updateMatch:(id:string,p:Partial<Match>)=>void}){
   const sorted=useMemo(()=>[...matches].sort((a,b)=>new Date(a.scheduledAt).getTime()-new Date(b.scheduledAt).getTime()),[matches]);
-  function updateSet(match:Match,index:number,side:"home"|"away",value:number){const sets=[...match.sets];while(sets.length<3)sets.push({home:0,away:0});sets[index]={...sets[index],[side]:value};updateMatch(match.id,{sets});}
-  async function saveMatch(match:Match){const effectiveSets=match.sets.filter((set,index)=>index<2||set.home>0||set.away>0);await save(()=>requestJson(`/api/admin/matches/${match.id}`,{method:"PATCH",body:JSON.stringify({homeTeamId:match.homeTeamId,awayTeamId:match.awayTeamId,scheduledAt:match.scheduledAt,court:match.court,status:match.status,notes:match.notes,sets:effectiveSets})}),"Jogo e classificação atualizados.");}
-  return <section className="admin-panel"><div className="admin-panel-head"><div><h2>Jogos e placares</h2><p>Informe os pontos de cada set e marque o jogo como encerrado.</p></div></div><div className="match-admin-list">{sorted.map((match)=><article className="match-editor" key={match.id}><div className="match-editor-head"><strong>{match.roundLabel} • {phaseLabels[match.phase]}</strong><span>{formatDate(match.scheduledAt)}</span></div><div className="match-edit-grid"><select value={match.homeTeamId??""} onChange={(e)=>updateMatch(match.id,{homeTeamId:e.target.value||null})}><option value="">Equipe a definir</option>{teams.map((t)=><option key={t.id} value={t.id}>{t.code} • {t.name}</option>)}</select><select value={match.awayTeamId??""} onChange={(e)=>updateMatch(match.id,{awayTeamId:e.target.value||null})}><option value="">Equipe a definir</option>{teams.map((t)=><option key={t.id} value={t.id}>{t.code} • {t.name}</option>)}</select><input type="datetime-local" value={localDateTime(match.scheduledAt)} onChange={(e)=>updateMatch(match.id,{scheduledAt:toIsoWithBrazilOffset(e.target.value)})}/><select value={match.status} onChange={(e)=>updateMatch(match.id,{status:e.target.value as Match["status"]})}><option value="scheduled">Agendado</option><option value="live">Ao vivo</option><option value="finished">Encerrado</option><option value="postponed">Adiado</option><option value="cancelled">Cancelado</option></select></div><div className="sets-editor">{[0,1,2].map((index)=><div className="set-editor" key={index}><span>Set {index+1}</span><input type="number" min="0" max="99" value={match.sets[index]?.home??0} onChange={(e)=>updateSet(match,index,"home",Number(e.target.value))}/><b>×</b><input type="number" min="0" max="99" value={match.sets[index]?.away??0} onChange={(e)=>updateSet(match,index,"away",Number(e.target.value))}/></div>)}</div><div className="match-editor-actions"><button className="button button-primary button-small" disabled={busy} onClick={()=>saveMatch(match)}><Save size={15}/> Salvar jogo</button></div></article>)}</div></section>;
+  const [scoreDrafts,setScoreDrafts]=useState<Record<string,string>>(()=>{
+    const drafts:Record<string,string>={};
+    for(const match of matches){
+      for(let index=0;index<3;index+=1){
+        for(const side of ["home","away"] as const){
+          const score=match.sets[index]?.[side];
+          drafts[`${match.id}-${index}-${side}`]=score ? String(score) : "";
+        }
+      }
+    }
+    return drafts;
+  });
+
+  function updateSet(match:Match,index:number,side:"home"|"away",value:number){
+    const sets=[...match.sets];
+    while(sets.length<3) sets.push({home:0,away:0});
+    sets[index]={...sets[index],[side]:value};
+    updateMatch(match.id,{sets});
+  }
+
+  function updateScoreDraft(match:Match,index:number,side:"home"|"away",rawValue:string){
+    const key=`${match.id}-${index}-${side}`;
+    if(rawValue===""){
+      setScoreDrafts((current)=>({...current,[key]:""}));
+      updateSet(match,index,side,0);
+      return;
+    }
+
+    const parsed=Number(rawValue);
+    if(!Number.isFinite(parsed)) return;
+    const score=Math.min(99,Math.max(0,Math.trunc(parsed)));
+    setScoreDrafts((current)=>({...current,[key]:String(score)}));
+    updateSet(match,index,side,score);
+  }
+
+  async function saveMatch(match:Match){
+    const lastPlayedSet=match.sets.reduce((last,set,index)=>set.home>0||set.away>0?index:last,-1);
+    const effectiveSets=lastPlayedSet>=0?match.sets.slice(0,lastPlayedSet+1):[];
+    await save(()=>requestJson(`/api/admin/matches/${match.id}`,{method:"PATCH",body:JSON.stringify({homeTeamId:match.homeTeamId,awayTeamId:match.awayTeamId,scheduledAt:match.scheduledAt,court:match.court,status:match.status,notes:match.notes,sets:effectiveSets})}),"Jogo e classificação atualizados.");
+  }
+
+  return <section className="admin-panel"><div className="admin-panel-head"><div><h2>Jogos e placares</h2><p>Informe os pontos de cada set e marque o jogo como encerrado. Campos vazios são salvos como zero.</p></div></div><div className="match-admin-list">{sorted.map((match)=><article className="match-editor" key={match.id}><div className="match-editor-head"><strong>{match.roundLabel} • {phaseLabels[match.phase]}</strong><span>{formatDate(match.scheduledAt)}</span></div><div className="match-edit-grid"><select value={match.homeTeamId??""} onChange={(e)=>updateMatch(match.id,{homeTeamId:e.target.value||null})}><option value="">Equipe a definir</option>{teams.map((t)=><option key={t.id} value={t.id}>{t.code} • {t.name}</option>)}</select><select value={match.awayTeamId??""} onChange={(e)=>updateMatch(match.id,{awayTeamId:e.target.value||null})}><option value="">Equipe a definir</option>{teams.map((t)=><option key={t.id} value={t.id}>{t.code} • {t.name}</option>)}</select><input type="datetime-local" value={localDateTime(match.scheduledAt)} onChange={(e)=>updateMatch(match.id,{scheduledAt:toIsoWithBrazilOffset(e.target.value)})}/><select value={match.status} onChange={(e)=>updateMatch(match.id,{status:e.target.value as Match["status"]})}><option value="scheduled">Agendado</option><option value="live">Ao vivo</option><option value="finished">Encerrado</option><option value="postponed">Adiado</option><option value="cancelled">Cancelado</option></select></div><div className="sets-editor">{[0,1,2].map((index)=><div className="set-editor" key={index}><span>Set {index+1}</span>{(["home","away"] as const).map((side)=><span className="score-side" key={side}>{side==="away"&&<b>×</b>}<input aria-label={`Pontos do ${side==="home"?"mandante":"visitante"} no set ${index+1}`} type="number" inputMode="numeric" min="0" max="99" step="1" placeholder="0" value={scoreDrafts[`${match.id}-${index}-${side}`]??""} onFocus={(e)=>e.currentTarget.select()} onWheel={(e)=>e.currentTarget.blur()} onChange={(e)=>updateScoreDraft(match,index,side,e.target.value)}/></span>)}</div>)}</div><div className="match-editor-actions"><button className="button button-primary button-small" disabled={busy} onClick={()=>saveMatch(match)}><Save size={15}/> Salvar jogo</button></div></article>)}</div></section>;
 }
 
 function AdjustmentsPanel({data,busy,save}:{data:TournamentView;busy:boolean;save:(action:()=>Promise<unknown>,message?:string)=>Promise<void>}){

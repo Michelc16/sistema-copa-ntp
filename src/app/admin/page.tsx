@@ -9,11 +9,8 @@ export default async function AdminPage() {
   const session = await verifyAdmin();
   if (!session) redirect("/admin/login");
   const data = await getTournamentView();
-  const versionKey = JSON.stringify({
-    teams: data.teams.map((team) => [team.id, team.name, team.groupName, team.players.length]),
-    matches: data.matches.map((match) => [match.id, match.status, match.sets]),
-    adjustments: data.adjustments,
-    tournament: [data.tournament.name, data.tournament.announcement, data.tournament.rules],
-  });
+  // Remount the client editor after a refresh whenever any persisted value
+  // changes, including captain flags, shirt numbers, dates and team choices.
+  const versionKey = JSON.stringify(data);
   return <AdminDashboard key={versionKey} initialData={data} email={String(session.email ?? "Administrador")} />;
 }

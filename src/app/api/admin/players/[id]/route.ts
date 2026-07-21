@@ -14,9 +14,43 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       return NextResponse.json({ error: firstError }, { status: 400 });
     }
     const { id } = await context.params; const d = parsed.data;
-    const result = await db()`UPDATE players SET name=${d.name},shirt_number=${d.shirtNumber},is_captain=${d.isCaptain},active=${d.active},updated_at=NOW() WHERE id=${id} RETURNING id`;
-    if (!result.length) return NextResponse.json({ error: "Atleta não encontrado." }, { status: 404 });
-    return NextResponse.json({ ok: true });
+    const sql = db();
+    const result = await sql.begin(async (tx) => {
+      // Lock the team as well as the player so two concurrent captain changes
+      // cannot leave more than one captain in the same squad.
+      const current = await tx<{ id: string; team_id: string }[]>`
+        SELECT p.id, p.team_id
+        FROM players p
+        JOIN teams t ON t.id = p.team_id
+        WHERE p.id = ${id}
+        FOR UPDATE OF p, t
+      `;
+      if (!current.length) return null;
+
+      const teamId = current[0].team_id;
+      if (d.isCaptain) {
+        await tx`UPDATE players SET is_captain=FALSE WHERE team_id=${teamId} AND id<>${id}`;
+      }
+
+      await tx`
+        UPDATE players
+        SET name=${d.name}, shirt_number=${d.shirtNumber}, is_captain=${d.isCaptain}, active=${d.active}
+        WHERE id=${id}
+      `;
+
+      // Keep the legacy representative field synchronized with the roster.
+      const captain = await tx<{ name: string }[]>`
+        SELECT name FROM players
+        WHERE team_id=${teamId} AND is_captain=TRUE AND active=TRUE
+        ORDER BY sort_order, name
+        LIMIT 1
+      `;
+      await tx`UPDATE teams SET captain=${captain[0]?.name ?? ""} WHERE id=${teamId}`;
+
+      return { teamId, captain: captain[0]?.name ?? "" };
+    });
+    if (!result) return NextResponse.json({ error: "Atleta não encontrado." }, { status: 404 });
+    return NextResponse.json({ ok: true, ...result });
   } catch (error) { return apiError(error); }
 }
 
@@ -24,8 +58,29 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
   const denied = await authorizeMutation(request); if (denied) return denied;
   try {
     const { id } = await context.params;
-    const result = await db()`DELETE FROM players WHERE id=${id} RETURNING id`;
-    if (!result.length) return NextResponse.json({ error: "Atleta não encontrado." }, { status: 404 });
+    const sql = db();
+    const deleted = await sql.begin(async (tx) => {
+      const current = await tx<{ id: string; team_id: string }[]>`
+        SELECT p.id, p.team_id
+        FROM players p
+        JOIN teams t ON t.id = p.team_id
+        WHERE p.id=${id}
+        FOR UPDATE OF p, t
+      `;
+      if (!current.length) return false;
+
+      const teamId = current[0].team_id;
+      await tx`DELETE FROM players WHERE id=${id}`;
+      const captain = await tx<{ name: string }[]>`
+        SELECT name FROM players
+        WHERE team_id=${teamId} AND is_captain=TRUE AND active=TRUE
+        ORDER BY sort_order, name
+        LIMIT 1
+      `;
+      await tx`UPDATE teams SET captain=${captain[0]?.name ?? ""} WHERE id=${teamId}`;
+      return true;
+    });
+    if (!deleted) return NextResponse.json({ error: "Atleta não encontrado." }, { status: 404 });
     return NextResponse.json({ ok: true });
   } catch (error) { return apiError(error); }
 }
