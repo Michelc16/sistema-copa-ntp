@@ -1,0 +1,34 @@
+{
+  "name": "copa-ntp-volei",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "db:setup": "tsx scripts/setup-db.ts"
+  },
+  "dependencies": {
+    "jose": "6.2.3",
+    "lucide-react": "1.25.0",
+    "next": "16.2.10",
+    "postgres": "3.4.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "16.2.10",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  }
+}
