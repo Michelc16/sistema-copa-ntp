@@ -17,9 +17,13 @@ export async function PATCH(request: Request) {
   const denied = await authorizeMutation(request); if (denied) return denied;
   try {
     const parsed = rulesSchema.safeParse(await request.json());
-    if (!parsed.success) return NextResponse.json({ error: "Cada regra deve ocupar uma linha válida." }, { status: 400 });
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0]?.message ?? "Regulamento inválido.";
+      return NextResponse.json({ error: firstError }, { status: 400 });
+    }
     const sql = db();
-    await sql`UPDATE tournaments SET rules=${sql.json(parsed.data)}, updated_at=NOW() WHERE id=${tournamentSeed.id}`;
+    const result = await sql`UPDATE tournaments SET rules=${sql.json(parsed.data)}, updated_at=NOW() WHERE id=${tournamentSeed.id} RETURNING id`;
+    if (!result.length) return NextResponse.json({ error: "Torneio não encontrado." }, { status: 404 });
     return NextResponse.json({ ok: true });
   } catch (error) { return apiError(error); }
 }

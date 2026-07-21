@@ -23,7 +23,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 img { max-width: 100%; height: auto; }
 .container { width: min(1160px, calc(100% - 40px)); margin-inline: auto; }
 
-.site-header { position: sticky; top: 0; z-index: 50; background: rgba(7,17,32,.88); border-bottom: 1px solid var(--line); backdrop-filter: blur(18px); }
+.site-header { position: sticky; top: 0; z-index: 50; background: rgba(7,17,32,.88); border-bottom: 1px solid var(--line); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
 .header-inner { min-height: 74px; display: flex; align-items: center; gap: 26px; }
 .brand-link { margin-right: auto; }
 .brand-mark { display: inline-flex; align-items: center; gap: 10px; }
@@ -36,7 +36,7 @@ img { max-width: 100%; height: auto; }
 .admin-link { color: #111827; background: var(--orange); padding: 10px 15px; border-radius: 10px; font-size: .78rem; font-weight: 900; }
 
 .hero { position: relative; overflow: hidden; min-height: 670px; display: flex; align-items: center; background: radial-gradient(circle at 75% 50%, rgba(28,77,136,.25), transparent 35%), linear-gradient(145deg, #071120 30%, #0b1e36 100%); }
-.hero::before { content: ""; position: absolute; inset: 0; opacity: .08; background-image: linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px); background-size: 42px 42px; mask-image: linear-gradient(to right, transparent, black); }
+.hero::before { content: ""; position: absolute; inset: 0; opacity: .08; background-image: linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px); background-size: 42px 42px; -webkit-mask-image: linear-gradient(to right, transparent, black); mask-image: linear-gradient(to right, transparent, black); }
 .hero-glow { position: absolute; border-radius: 50%; filter: blur(2px); opacity: .5; }
 .hero-glow-one { width: 260px; height: 260px; right: -70px; top: -70px; background: #ff3b6a; filter: blur(100px); }
 .hero-glow-two { width: 220px; height: 220px; left: -100px; bottom: -70px; background: #1679ff; filter: blur(100px); }
@@ -65,7 +65,7 @@ img { max-width: 100%; height: auto; }
 .crest-card small { font-weight: 950; letter-spacing: .22em; font-size: .72rem; }
 .crest-card strong { font-size: 2.6rem; line-height: 1; margin: 8px 0; }
 .crest-card span { color: var(--orange); font-weight: 900; letter-spacing: .16em; font-size: .67rem; }
-.fair-play-card { position: absolute; right: -24px; bottom: 35px; padding: 13px 16px; border: 1px solid rgba(255,255,255,.16); background: rgba(15,29,49,.9); border-radius: 15px; box-shadow: var(--shadow); display:flex; align-items:center; gap:11px; backdrop-filter:blur(15px); }
+.fair-play-card { position: absolute; right: -24px; bottom: 35px; padding: 13px 16px; border: 1px solid rgba(255,255,255,.16); background: rgba(15,29,49,.9); border-radius: 15px; box-shadow: var(--shadow); display:flex; align-items:center; gap:11px; -webkit-backdrop-filter: blur(15px); backdrop-filter: blur(15px); }
 .fair-play-card svg { color: var(--green); }
 .fair-play-card span { display:flex; flex-direction:column; font-size:.7rem; color:var(--muted); }
 .fair-play-card b { color:white; font-size:.84rem; }
@@ -100,7 +100,7 @@ img { max-width: 100%; height: auto; }
 @keyframes pulse { 50% { opacity:.62; } }
 .match-versus { display:grid; grid-template-columns:1fr 90px 1fr; gap:12px; align-items:center; margin:26px 0 22px; }
 .mini-team { min-width:0; display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; }
-.team-orb, .large-orb { display:grid; place-items:center; width:56px; height:56px; border-radius:18px; background:color-mix(in srgb,var(--team-color) 24%,#101d31); border:1px solid color-mix(in srgb,var(--team-color) 60%,transparent); color:var(--team-color); font-weight:950; box-shadow:inset 0 0 22px color-mix(in srgb,var(--team-color) 12%,transparent); }
+.team-orb, .large-orb { display:grid; place-items:center; width:56px; height:56px; border-radius:18px; background:rgba(var(--team-color-rgb), 0.24); border:1px solid rgba(var(--team-color-rgb), 0.6); color:var(--team-color); font-weight:950; box-shadow:inset 0 0 22px rgba(var(--team-color-rgb), 0.12); }
 .mini-team strong { font-size:.86rem; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 .score-box { display:flex; justify-content:center; align-items:center; gap:9px; }
 .score-box b { font-size:2rem; }

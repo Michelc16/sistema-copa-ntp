@@ -11,14 +11,31 @@ import type { Match, Player, Team, TournamentRules, TournamentView } from "@/lib
 type Tab = "geral" | "equipes" | "jogos" | "pontuacao" | "regras";
 
 async function requestJson(url: string, options: RequestInit) {
-  const response = await fetch(url, { ...options, headers: { "content-type": "application/json", ...options.headers } });
-  const result = await response.json().catch(() => ({ error: "Resposta do servidor inválida." }));
-  if (!response.ok) {
-    const errorMsg = result.error ?? `Erro ${response.status}: ${response.statusText}`;
-    throw new Error(errorMsg);
+  try {
+    const response = await fetch(url, { ...options, headers: { "content-type": "application/json", ...options.headers } });
+    const result = await response.json().catch(() => ({ error: "Resposta do servidor inválida." }));
+    
+    if (!response.ok) {
+      const errorMsg = result.error ?? `Erro HTTP ${response.status}`;
+      console.error(`[Request Error] ${response.status}: ${errorMsg}`);
+      throw new Error(errorMsg);
+    }
+    
+    if (result.error) {
+      console.error(`[API Error Response]:`, result.error);
+      throw new Error(result.error);
+    }
+    
+    if (!result.ok && typeof result.ok !== "undefined") {
+      throw new Error("Operação não completada pelo servidor.");
+    }
+    
+    return result;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Erro de conexão com servidor";
+    console.error(`[RequestJSON Error]:`, message);
+    throw error;
   }
-  if (!result.ok) throw new Error(result.error ?? "Falha ao salvar.");
-  return result;
 }
 
 function localDateTime(iso: string) {

@@ -16,8 +16,8 @@ export async function PATCH(request: Request) {
   try {
     const parsed = schema.safeParse(await request.json());
     if (!parsed.success) {
-      const messages = parsed.error.issues.map(i => i.message).join(", ");
-      return NextResponse.json({ error: `Dados inválidos: ${messages}` }, { status: 400 });
+      const firstError = parsed.error.issues[0]?.message ?? "Dados do torneio inválidos.";
+      return NextResponse.json({ error: firstError }, { status: 400 });
     }
     const d = parsed.data;
     const result = await db()`UPDATE tournaments SET name=${d.name}, edition=${d.edition}, subtitle=${d.subtitle}, description=${d.description}, venue=${d.venue}, city=${d.city}, start_date=${d.startDate}, end_date=${d.endDate}, announcement=${d.announcement}, updated_at=NOW() WHERE id=${tournamentSeed.id} RETURNING id`;
