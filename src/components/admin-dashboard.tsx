@@ -49,10 +49,19 @@ function toIsoWithBrazilOffset(value: string) { return `${value}:00-03:00`; }
 export function AdminDashboard({ initialData, email }: { initialData: TournamentView; email: string }) {
   const router = useRouter();
   const [data, setData] = useState(initialData);
+  const [previousInitialData, setPreviousInitialData] = useState(initialData);
   const [tab, setTab] = useState<Tab>("geral");
   const [selectedTeamId, setSelectedTeamId] = useState(initialData.teams[0]?.id ?? "");
   const [toast, setToast] = useState<{ text:string; error?:boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // A server refresh brings the authoritative data without remounting the
+  // dashboard, so the active tab and selected team remain unchanged.
+  if(initialData!==previousInitialData){
+    setPreviousInitialData(initialData);
+    setData(initialData);
+  }
+
   useEffect(() => { if (!toast) return; const timer=setTimeout(()=>setToast(null),3200); return()=>clearTimeout(timer); }, [toast]);
   const selectedTeam = data.teams.find((team) => team.id === selectedTeamId) ?? data.teams[0];
 
