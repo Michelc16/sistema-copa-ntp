@@ -8,16 +8,20 @@ const schema = z.object({
   name: z.string().trim().min(2).max(120), edition: z.string().trim().min(1).max(60),
   subtitle: z.string().trim().max(180), description: z.string().trim().max(1000),
   venue: z.string().trim().max(160), city: z.string().trim().max(160),
-  startDate: z.iso.date(), endDate: z.iso.date(), announcement: z.string().trim().max(300),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), announcement: z.string().trim().max(300),
 });
 
 export async function PATCH(request: Request) {
   const denied = await authorizeMutation(request); if (denied) return denied;
   try {
     const parsed = schema.safeParse(await request.json());
-    if (!parsed.success) return NextResponse.json({ error: "Revise os dados informados." }, { status: 400 });
+    if (!parsed.success) {
+      const messages = parsed.error.issues.map(i => i.message).join(", ");
+      return NextResponse.json({ error: `Dados inválidos: ${messages}` }, { status: 400 });
+    }
     const d = parsed.data;
-    await db()`UPDATE tournaments SET name=${d.name}, edition=${d.edition}, subtitle=${d.subtitle}, description=${d.description}, venue=${d.venue}, city=${d.city}, start_date=${d.startDate}, end_date=${d.endDate}, announcement=${d.announcement}, updated_at=NOW() WHERE id=${tournamentSeed.id}`;
+    const result = await db()`UPDATE tournaments SET name=${d.name}, edition=${d.edition}, subtitle=${d.subtitle}, description=${d.description}, venue=${d.venue}, city=${d.city}, start_date=${d.startDate}, end_date=${d.endDate}, announcement=${d.announcement}, updated_at=NOW() WHERE id=${tournamentSeed.id} RETURNING id`;
+    if (!result.length) return NextResponse.json({ error: "Torneio não encontrado." }, { status: 404 });
     return NextResponse.json({ ok: true });
   } catch (error) { return apiError(error); }
 }

@@ -12,8 +12,12 @@ type Tab = "geral" | "equipes" | "jogos" | "pontuacao" | "regras";
 
 async function requestJson(url: string, options: RequestInit) {
   const response = await fetch(url, { ...options, headers: { "content-type": "application/json", ...options.headers } });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.error ?? "Falha ao salvar.");
+  const result = await response.json().catch(() => ({ error: "Resposta do servidor inválida." }));
+  if (!response.ok) {
+    const errorMsg = result.error ?? `Erro ${response.status}: ${response.statusText}`;
+    throw new Error(errorMsg);
+  }
+  if (!result.ok) throw new Error(result.error ?? "Falha ao salvar.");
   return result;
 }
 
@@ -36,8 +40,31 @@ export function AdminDashboard({ initialData, email }: { initialData: Tournament
   const selectedTeam = data.teams.find((team) => team.id === selectedTeamId) ?? data.teams[0];
 
   function notify(text: string, error=false) { setToast({text,error}); }
-  async function save(action:()=>Promise<unknown>, message="Alterações salvas.") { setBusy(true); try { await action(); notify(message); router.refresh(); } catch(error){ notify(error instanceof Error?error.message:"Falha ao salvar.",true); } finally{setBusy(false);} }
-  async function logout(){ await fetch("/api/auth/logout",{method:"POST"}); router.push("/admin/login"); router.refresh(); }
+  async function save(action:()=>Promise<unknown>, message="Alterações salvas.") { 
+    setBusy(true); 
+    try { 
+      await action(); 
+      notify(message);
+      // Aguardar um pouco antes de fazer refresh para garantir consistência
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      router.refresh(); 
+    } catch(error){ 
+      const errorMsg = error instanceof Error ? error.message : "Falha ao salvar.";
+      notify(errorMsg, true);
+      console.error("Erro ao salvar:", error);
+    } finally{
+      setBusy(false);
+    } 
+  }
+  async function logout(){ 
+    try {
+      await fetch("/api/auth/logout", { method: "POST" }); 
+    } catch(e) {
+      console.error("Erro ao fazer logout:", e);
+    }
+    router.push("/admin/login"); 
+    router.refresh(); 
+  }
 
   function updateTeamLocal(teamId:string, patch:Partial<Team>){ setData((current)=>({...current,teams:current.teams.map((team)=>team.id===teamId?{...team,...patch}:team)})); }
   function updatePlayerLocal(teamId:string, playerId:string, patch:Partial<Player>){ setData((current)=>({...current,teams:current.teams.map((team)=>team.id===teamId?{...team,players:team.players.map((player)=>player.id===playerId?{...player,...patch}:player)}:team)})); }
