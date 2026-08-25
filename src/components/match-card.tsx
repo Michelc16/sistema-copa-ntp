@@ -6,11 +6,45 @@ function score(match: Match, side: "home" | "away") {
   return match.sets.filter((set) => side === "home" ? set.home > set.away : set.away > set.home).length;
 }
 
-function MiniTeam({ team, placeholder }: { team?: Team; placeholder: string }) {
+type MatchSlotLabels = { home: string; away: string };
+
+const defaultSlotLabels: Record<Exclude<Match["phase"], "group">, MatchSlotLabels> = {
+  semifinal: { home: "1º do Grupo A", away: "2º do Grupo B" },
+  third_place: { home: "Perdedor da Semifinal 1", away: "Perdedor da Semifinal 2" },
+  final: { home: "Vencedor da Semifinal 1", away: "Vencedor da Semifinal 2" },
+};
+
+function normalizeGroupSlot(label: string) {
+  return label.replace(/^(\d)\s*[º°o]?\s*(?:do\s+)?grupo\s+/i, "$1º do Grupo ");
+}
+
+export function getMatchSlotLabels(match: Match): MatchSlotLabels {
+  if (match.phase === "group") return { home: "A definir", away: "A definir" };
+
+  // Existing tournament data stores both semifinal origins in `notes`.
+  // Splitting it here keeps already-created databases compatible.
+  const noteSlots = match.notes
+    .split(/\s+[x×]\s+/i)
+    .map((label) => normalizeGroupSlot(label.trim()))
+    .filter(Boolean);
+
+  if (noteSlots.length === 2) return { home: noteSlots[0], away: noteSlots[1] };
+
+  if (match.phase === "semifinal" && /(?:semifinal|sf)\s*2/i.test(`${match.roundLabel} ${match.id}`)) {
+    return { home: "1º do Grupo B", away: "2º do Grupo A" };
+  }
+
+  return defaultSlotLabels[match.phase];
+}
+
+function MiniTeam({ team, slotLabel }: { team?: Team; slotLabel?: string }) {
   return (
-    <div className="mini-team">
-      <span className="team-orb" style={{ "--team-color": team?.color ?? "#64748b" } as React.CSSProperties}>{team?.code ?? "?"}</span>
-      <strong>{team?.name ?? placeholder}</strong>
+    <div className={`mini-team ${team ? "" : "is-pending"}`}>
+      <span className="team-orb" aria-hidden="true" style={{ "--team-color": team?.color ?? "#64748b" } as React.CSSProperties}>{team?.code ?? "?"}</span>
+      <div className="mini-team-copy">
+        <strong>{team?.name ?? "A definir"}</strong>
+        {slotLabel && <small>{slotLabel}</small>}
+      </div>
     </div>
   );
 }
@@ -18,6 +52,7 @@ function MiniTeam({ team, placeholder }: { team?: Team; placeholder: string }) {
 export function MatchCard({ match, teams }: { match: Match; teams: Team[] }) {
   const home = teams.find((team) => team.id === match.homeTeamId);
   const away = teams.find((team) => team.id === match.awayTeamId);
+  const slotLabels = getMatchSlotLabels(match);
   const showScore = match.status === "finished" || match.status === "live";
   return (
     <article className={`match-card ${match.status === "live" ? "is-live" : ""}`}>
@@ -26,9 +61,9 @@ export function MatchCard({ match, teams }: { match: Match; teams: Team[] }) {
         <span className={`status-pill status-${match.status}`}>{statusLabels[match.status]}</span>
       </div>
       <div className="match-versus">
-        <MiniTeam team={home} placeholder={match.notes || "A definir"} />
+        <MiniTeam team={home} slotLabel={match.phase === "group" ? undefined : slotLabels.home} />
         <div className="score-box">{showScore ? <><b>{score(match, "home")}</b><i>×</i><b>{score(match, "away")}</b></> : <span>×</span>}</div>
-        <MiniTeam team={away} placeholder="A definir" />
+        <MiniTeam team={away} slotLabel={match.phase === "group" ? undefined : slotLabels.away} />
       </div>
       {showScore && match.sets.length > 0 && (
         <div className="set-line">{match.sets.map((set, index) => <span key={index}>Set {index + 1}: <b>{set.home}–{set.away}</b></span>)}</div>

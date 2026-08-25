@@ -104,10 +104,10 @@ const matches: MatchSeedInput[] = [
   { id: "g10", phase: "group", groupName: "B", roundLabel: "3ª rodada", homeTeamId: "b1", awayTeamId: "b4", scheduledAt: "2026-10-31T09:30:00-03:00", sortOrder: 10 },
   { id: "g11", phase: "group", groupName: "A", roundLabel: "3ª rodada", homeTeamId: "a2", awayTeamId: "a3", scheduledAt: "2026-11-01T10:30:00-03:00", sortOrder: 11 },
   { id: "g12", phase: "group", groupName: "B", roundLabel: "3ª rodada", homeTeamId: "b2", awayTeamId: "b3", scheduledAt: "2026-11-01T11:30:00-03:00", sortOrder: 12 },
-  { id: "sf1", phase: "semifinal", groupName: null, roundLabel: "Semifinal 1", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-11-28T08:30:00-03:00", sortOrder: 13, notes: "1º Grupo A x 2º Grupo B" },
-  { id: "sf2", phase: "semifinal", groupName: null, roundLabel: "Semifinal 2", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-11-29T10:30:00-03:00", sortOrder: 14, notes: "1º Grupo B x 2º Grupo A" },
-  { id: "third", phase: "third_place", groupName: null, roundLabel: "Disputa de 3º lugar", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-12-05T08:30:00-03:00", sortOrder: 15, notes: "Perdedores das semifinais" },
-  { id: "final", phase: "final", groupName: null, roundLabel: "Grande final", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-12-06T10:30:00-03:00", sortOrder: 16, notes: "Vencedores das semifinais" },
+  { id: "sf1", phase: "semifinal", groupName: null, roundLabel: "Semifinal 1", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-11-28T08:30:00-03:00", sortOrder: 13, notes: "1º do Grupo A × 2º do Grupo B" },
+  { id: "sf2", phase: "semifinal", groupName: null, roundLabel: "Semifinal 2", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-11-29T10:30:00-03:00", sortOrder: 14, notes: "1º do Grupo B × 2º do Grupo A" },
+  { id: "third", phase: "third_place", groupName: null, roundLabel: "Disputa de 3º lugar", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-12-05T08:30:00-03:00", sortOrder: 15, notes: "Perdedor da Semifinal 1 × Perdedor da Semifinal 2" },
+  { id: "final", phase: "final", groupName: null, roundLabel: "Grande final", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-12-06T10:30:00-03:00", sortOrder: 16, notes: "Vencedor da Semifinal 1 × Vencedor da Semifinal 2" },
 ];
 
 export const matchSeeds: Match[] = matches.map((match) => ({
