@@ -5,13 +5,13 @@ Sistema web completo e responsivo para organizar a 4ª Copa NTP de vôlei. A ár
 ## O que está pronto
 
 - Página inicial profissional com identidade visual NTP, comunicado, próximos jogos e resumo da classificação.
-- Calendário com fase de grupos, semifinais, disputa de 3º lugar e final.
+- Calendário com fase de grupos, quartas de final, semifinais, disputa de 3º lugar e final.
 - Placar completo, incluindo resultado de cada set e status “ao vivo”.
 - Classificação automática por grupos a partir dos resultados.
 - Ajuste administrativo de pontos para punição, W.O., bônus ou correção.
 - Oito equipes e 56 atletas cadastrados conforme o material fornecido.
 - Página de equipes e elencos, regulamento editável e chaveamento das finais.
-- Painel protegido para editar campeonato, equipes, atletas, jogos, placares, regras e pontuação.
+- Painel protegido para criar, ordenar, ocultar e excluir fases; adicionar, mover e excluir jogos; e editar campeonato, equipes, atletas, placares, regras e pontuação.
 - Modo de demonstração: o site funciona com os dados iniciais mesmo antes de conectar o Neon.
 - Banco PostgreSQL preparado para Neon e implantação preparada para Vercel.
 - Proteção por cookie HTTP-only, JWT com validade de 8 horas, SameSite estrito, validação de origem e validação de todos os dados recebidos.
@@ -55,7 +55,7 @@ Depois do primeiro deploy, abra:
 https://SEU-DOMINIO.vercel.app/configurar
 ```
 
-Informe o valor definido em `SETUP_SECRET`. Essa ação cria as tabelas e cadastra campeonato, regras, equipes, atletas e 16 partidas. Pode ser executada novamente sem apagar alterações existentes.
+Informe o valor definido em `SETUP_SECRET`. Essa ação cria ou atualiza a estrutura do banco e cadastra campeonato, regras, cinco fases, equipes, atletas e 20 partidas. Na primeira execução desta versão, o cronograma futuro é migrado para o modelo oficial do novo cartaz; as execuções seguintes não repetem essa migração.
 
 ### 4. Entrar no painel
 
@@ -106,6 +106,6 @@ npm run build
 ## Observações antes de divulgar
 
 - Confirme o nome exato de cada atleta no painel; os nomes iniciais foram transcritos da planilha enviada.
-- O calendário inicial distribui a fase de grupos em turno único e reserva 28/11 e 29/11 para semifinais, 05/12 para 3º lugar e 06/12 para a final.
+- O calendário distribui a fase de grupos em turno único, as quartas em 28/11 e 29/11, as semifinais em 05/12 e as decisões em 06/12.
 - Revise o nome da quadra, cidade e perfil de Instagram na primeira publicação.
 - Marque uma partida como **Encerrado** somente depois de preencher ao menos dois sets válidos; a classificação usa apenas partidas encerradas.

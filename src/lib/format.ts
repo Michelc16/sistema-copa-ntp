@@ -1,11 +1,16 @@
-import type { MatchPhase, MatchStatus } from "./types";
+import type { MatchStatus } from "./types";
 
-export const phaseLabels: Record<MatchPhase, string> = {
+export const phaseLabels: Record<string, string> = {
   group: "Fase de grupos",
+  quarterfinal: "Quartas de final",
   semifinal: "Semifinal",
   third_place: "3º lugar",
   final: "Final",
 };
+
+export function getPhaseLabel(phase: string) {
+  return phaseLabels[phase] ?? phase;
+}
 
 export const statusLabels: Record<MatchStatus, string> = {
   scheduled: "Agendado",

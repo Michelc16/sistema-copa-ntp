@@ -37,10 +37,21 @@ CREATE TABLE IF NOT EXISTS players (
   sort_order INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS tournament_phases (
+  id TEXT PRIMARY KEY,
+  tournament_id TEXT NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('group', 'knockout')),
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (tournament_id, name)
+);
+
 CREATE TABLE IF NOT EXISTS matches (
   id TEXT PRIMARY KEY,
   tournament_id TEXT NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
-  phase TEXT NOT NULL CHECK (phase IN ('group', 'semifinal', 'third_place', 'final')),
+  phase TEXT NOT NULL,
   group_name TEXT CHECK (group_name IN ('A', 'B')),
   round_label TEXT NOT NULL DEFAULT '',
   home_team_id TEXT REFERENCES teams(id) ON DELETE SET NULL,
@@ -54,6 +65,25 @@ CREATE TABLE IF NOT EXISTS matches (
   CHECK (home_team_id IS NULL OR away_team_id IS NULL OR home_team_id <> away_team_id)
 );
 
+-- Bancos criados por versões anteriores limitavam as fases a quatro valores.
+-- A fase agora é configurável pelo painel administrativo.
+ALTER TABLE matches DROP CONSTRAINT IF EXISTS matches_phase_check;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'matches_phase_fkey') THEN
+    ALTER TABLE matches
+      ADD CONSTRAINT matches_phase_fkey
+      FOREIGN KEY (phase) REFERENCES tournament_phases(id)
+      ON UPDATE CASCADE ON DELETE RESTRICT NOT VALID;
+  END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS app_migrations (
+  id TEXT PRIMARY KEY,
+  applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS standing_adjustments (
   team_id TEXT PRIMARY KEY REFERENCES teams(id) ON DELETE CASCADE,
   points INTEGER NOT NULL DEFAULT 0,
@@ -63,4 +93,5 @@ CREATE TABLE IF NOT EXISTS standing_adjustments (
 
 CREATE INDEX IF NOT EXISTS idx_teams_tournament ON teams(tournament_id, group_name, sort_order);
 CREATE INDEX IF NOT EXISTS idx_players_team ON players(team_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_phases_tournament ON tournament_phases(tournament_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_matches_tournament_date ON matches(tournament_id, scheduled_at);

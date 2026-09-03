@@ -5,14 +5,14 @@ export function StandingsTable({ group, rows, compact = false }: { group: "A" | 
     <div className="standings-card">
       <div className="standings-title">
         <span>Grupo {group}</span>
-        <small>2 primeiros avançam</small>
+        <small>Todos avançam às quartas</small>
       </div>
       <div className="table-scroll">
         <table className="standings-table">
           <thead><tr><th>#</th><th>Equipe</th><th>J</th><th>V</th>{!compact && <><th>D</th><th>Sets</th><th>Saldo</th></>}<th>PTS</th></tr></thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.team.id} className={row.position <= 2 ? "qualified" : ""}>
+              <tr key={row.team.id} className="qualified">
                 <td><b>{row.position}</b></td>
                 <td><span className="table-team"><i style={{ background: row.team.color }} /> <strong>{row.team.name}</strong><small>{row.team.code}</small></span></td>
                 <td>{row.played}</td><td>{row.wins}</td>

@@ -59,7 +59,7 @@ export default async function HomePage() {
         <section className="section">
           <div className="container">
             <div className="section-heading"><div><span className="eyebrow">Agenda oficial</span><h2>Próximos jogos</h2><p>Horários e confrontos atualizados pela organização.</p></div><Link href="/jogos" className="text-link">Ver todos <ArrowRight size={17} /></Link></div>
-            <div className="match-grid">{nextMatches.map((match) => <MatchCard key={match.id} match={match} teams={data.teams} />)}</div>
+            <div className="match-grid">{nextMatches.map((match) => <MatchCard key={match.id} match={match} teams={data.teams} phaseKind={data.phases.find((phase) => phase.id === match.phase)?.kind} />)}</div>
           </div>
         </section>
 

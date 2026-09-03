@@ -14,6 +14,7 @@ export function calculateStandings(
   teams: Team[],
   matches: Match[],
   adjustments: StandingAdjustment[],
+  groupPhaseIds: Set<string> = new Set(["group"]),
 ): { A: Standing[]; B: Standing[] } {
   const adjustmentMap = new Map(adjustments.map((item) => [item.teamId, item]));
   const rows = new Map<string, Standing>();
@@ -37,7 +38,7 @@ export function calculateStandings(
   }
 
   for (const match of matches) {
-    if (match.phase !== "group" || match.status !== "finished" || !match.homeTeamId || !match.awayTeamId) continue;
+    if (!groupPhaseIds.has(match.phase) || match.status !== "finished" || !match.homeTeamId || !match.awayTeamId) continue;
     const result = winnerFromSets(match);
     const home = rows.get(match.homeTeamId);
     const away = rows.get(match.awayTeamId);

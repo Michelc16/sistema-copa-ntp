@@ -1,6 +1,6 @@
 import { CalendarDays, Clock3, MapPin } from "lucide-react";
-import { formatDate, formatTime, phaseLabels, statusLabels } from "@/lib/format";
-import type { Match, Team } from "@/lib/types";
+import { formatDate, formatTime, getPhaseLabel, statusLabels } from "@/lib/format";
+import type { Match, PhaseKind, Team } from "@/lib/types";
 
 function score(match: Match, side: "home" | "away") {
   return match.sets.filter((set) => side === "home" ? set.home > set.away : set.away > set.home).length;
@@ -8,8 +8,9 @@ function score(match: Match, side: "home" | "away") {
 
 type MatchSlotLabels = { home: string; away: string };
 
-const defaultSlotLabels: Record<Exclude<Match["phase"], "group">, MatchSlotLabels> = {
-  semifinal: { home: "1º do Grupo A", away: "2º do Grupo B" },
+const defaultSlotLabels: Record<string, MatchSlotLabels> = {
+  quarterfinal: { home: "Classificado do Grupo A", away: "Classificado do Grupo B" },
+  semifinal: { home: "Vencedor das quartas", away: "Vencedor das quartas" },
   third_place: { home: "Perdedor da Semifinal 1", away: "Perdedor da Semifinal 2" },
   final: { home: "Vencedor da Semifinal 1", away: "Vencedor da Semifinal 2" },
 };
@@ -30,11 +31,7 @@ export function getMatchSlotLabels(match: Match): MatchSlotLabels {
 
   if (noteSlots.length === 2) return { home: noteSlots[0], away: noteSlots[1] };
 
-  if (match.phase === "semifinal" && /(?:semifinal|sf)\s*2/i.test(`${match.roundLabel} ${match.id}`)) {
-    return { home: "1º do Grupo B", away: "2º do Grupo A" };
-  }
-
-  return defaultSlotLabels[match.phase];
+  return defaultSlotLabels[match.phase] ?? { home: "Vaga 1", away: "Vaga 2" };
 }
 
 function MiniTeam({ team, slotLabel }: { team?: Team; slotLabel?: string }) {
@@ -49,21 +46,22 @@ function MiniTeam({ team, slotLabel }: { team?: Team; slotLabel?: string }) {
   );
 }
 
-export function MatchCard({ match, teams }: { match: Match; teams: Team[] }) {
+export function MatchCard({ match, teams, phaseKind }: { match: Match; teams: Team[]; phaseKind?: PhaseKind }) {
   const home = teams.find((team) => team.id === match.homeTeamId);
   const away = teams.find((team) => team.id === match.awayTeamId);
   const slotLabels = getMatchSlotLabels(match);
+  const isGroupPhase = phaseKind ? phaseKind === "group" : match.phase === "group";
   const showScore = match.status === "finished" || match.status === "live";
   return (
     <article className={`match-card ${match.status === "live" ? "is-live" : ""}`}>
       <div className="match-topline">
-        <span>{match.roundLabel || phaseLabels[match.phase]}{match.groupName ? ` • Grupo ${match.groupName}` : ""}</span>
+        <span>{match.roundLabel || getPhaseLabel(match.phase)}{match.groupName ? ` • Grupo ${match.groupName}` : ""}</span>
         <span className={`status-pill status-${match.status}`}>{statusLabels[match.status]}</span>
       </div>
       <div className="match-versus">
-        <MiniTeam team={home} slotLabel={match.phase === "group" ? undefined : slotLabels.home} />
+        <MiniTeam team={home} slotLabel={isGroupPhase ? undefined : slotLabels.home} />
         <div className="score-box">{showScore ? <><b>{score(match, "home")}</b><i>×</i><b>{score(match, "away")}</b></> : <span>×</span>}</div>
-        <MiniTeam team={away} slotLabel={match.phase === "group" ? undefined : slotLabels.away} />
+        <MiniTeam team={away} slotLabel={isGroupPhase ? undefined : slotLabels.away} />
       </div>
       {showScore && match.sets.length > 0 && (
         <div className="set-line">{match.sets.map((set, index) => <span key={index}>Set {index + 1}: <b>{set.home}–{set.away}</b></span>)}</div>

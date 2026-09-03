@@ -1,7 +1,7 @@
 import { db, hasDatabase } from "./db";
-import { matchSeeds, teamSeeds, tournamentSeed } from "./seed-data";
+import { matchSeeds, phaseSeeds, teamSeeds, tournamentSeed } from "./seed-data";
 import { calculateStandings } from "./standings";
-import type { Match, Player, StandingAdjustment, Team, Tournament, TournamentRules, TournamentView } from "./types";
+import type { Match, Player, StandingAdjustment, Team, Tournament, TournamentPhase, TournamentRules, TournamentView } from "./types";
 
 type DbTournament = {
   id: string; slug: string; name: string; edition: string; subtitle: string; description: string;
@@ -10,17 +10,20 @@ type DbTournament = {
 type DbTeam = { id: string; tournament_id: string; code: string; name: string; group_name: "A" | "B"; color: string; captain: string; sort_order: number; active: boolean };
 type DbPlayer = { id: string; team_id: string; name: string; shirt_number: number | null; is_captain: boolean; active: boolean; sort_order: number };
 type DbMatch = { id: string; tournament_id: string; phase: Match["phase"]; group_name: "A" | "B" | null; round_label: string; home_team_id: string | null; away_team_id: string | null; scheduled_at: Date | string; court: string; status: Match["status"]; sets: Match["sets"] | string; notes: string; sort_order: number };
+type DbPhase = { id: string; tournament_id: string; name: string; kind: TournamentPhase["kind"]; sort_order: number; active: boolean };
 type DbAdjustment = { team_id: string; points: number; reason: string };
 
 function demoView(): TournamentView {
   const adjustments: StandingAdjustment[] = [];
   const teams = structuredClone(teamSeeds);
+  const phases = structuredClone(phaseSeeds);
   const matches = structuredClone(matchSeeds);
   return {
     tournament: structuredClone(tournamentSeed),
     teams,
+    phases,
     matches,
-    standings: calculateStandings(teams, matches, adjustments),
+    standings: calculateStandings(teams, matches, adjustments, new Set(phases.filter((phase) => phase.kind === "group").map((phase) => phase.id))),
     adjustments,
     usingDemoData: true,
   };
@@ -45,7 +48,7 @@ export async function getTournamentView(): Promise<TournamentView> {
   if (!hasDatabase()) return demoView();
   try {
     const sql = db();
-    const [tournamentRows, teamRows, playerRows, matchRows, adjustmentRows] = await Promise.all([
+    const [tournamentRows, teamRows, playerRows, phaseRows, matchRows, adjustmentRows] = await Promise.all([
       sql<DbTournament[]>`
         SELECT id, slug, name, edition, subtitle, description, venue, city,
           start_date::text AS start_date, end_date::text AS end_date,
@@ -56,6 +59,7 @@ export async function getTournamentView(): Promise<TournamentView> {
       `,
       sql<DbTeam[]>`SELECT * FROM teams WHERE tournament_id = ${tournamentSeed.id} ORDER BY sort_order, code`,
       sql<DbPlayer[]>`SELECT p.* FROM players p JOIN teams t ON t.id = p.team_id WHERE t.tournament_id = ${tournamentSeed.id} ORDER BY p.sort_order, p.name`,
+      sql<DbPhase[]>`SELECT * FROM tournament_phases WHERE tournament_id = ${tournamentSeed.id} ORDER BY sort_order, name`,
       sql<DbMatch[]>`SELECT * FROM matches WHERE tournament_id = ${tournamentSeed.id} ORDER BY scheduled_at, sort_order`,
       sql<DbAdjustment[]>`SELECT a.* FROM standing_adjustments a JOIN teams t ON t.id = a.team_id WHERE t.tournament_id = ${tournamentSeed.id}`,
     ]);
@@ -86,6 +90,10 @@ export async function getTournamentView(): Promise<TournamentView> {
       sortOrder: row.sort_order, active: row.active,
       players: players.filter((player) => player.teamId === row.id),
     }));
+    const phases: TournamentPhase[] = phaseRows.map((row) => ({
+      id: row.id, tournamentId: row.tournament_id, name: row.name,
+      kind: row.kind, sortOrder: row.sort_order, active: row.active,
+    }));
     const matches: Match[] = matchRows.map((row) => ({
       id: row.id, tournamentId: row.tournament_id, phase: row.phase, groupName: row.group_name,
       roundLabel: row.round_label, homeTeamId: row.home_team_id, awayTeamId: row.away_team_id,
@@ -94,7 +102,8 @@ export async function getTournamentView(): Promise<TournamentView> {
       notes: row.notes, sortOrder: row.sort_order,
     }));
     const adjustments: StandingAdjustment[] = adjustmentRows.map((row) => ({ teamId: row.team_id, points: row.points, reason: row.reason }));
-    return { tournament, teams, matches, standings: calculateStandings(teams, matches, adjustments), adjustments, usingDemoData: false };
+    const groupPhaseIds = new Set(phases.filter((phase) => phase.kind === "group").map((phase) => phase.id));
+    return { tournament, teams, phases, matches, standings: calculateStandings(teams, matches, adjustments, groupPhaseIds), adjustments, usingDemoData: false };
   } catch (error) {
     console.error("Falha ao carregar o Neon; usando dados demonstrativos.", error);
     return demoView();

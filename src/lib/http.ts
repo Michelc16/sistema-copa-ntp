@@ -9,6 +9,7 @@ export async function authorizeMutation(request: Request) {
 
 export function apiError(error: unknown) {
   const errorMsg = error instanceof Error ? error.message : String(error);
+  const errorCode = typeof error === "object" && error !== null && "code" in error ? String(error.code) : "";
   console.error("[API Error]", errorMsg, error);
   
   // Database configuration error
@@ -19,6 +20,14 @@ export function apiError(error: unknown) {
   // Database connection error (timeout, refused, etc)
   if (errorMsg.includes("connect") || errorMsg.includes("timeout") || errorMsg.includes("ECONNREFUSED")) {
     return NextResponse.json({ error: "Banco de dados indisponível. Tente novamente em alguns segundos." }, { status: 503 });
+  }
+
+  if (errorCode === "23505") {
+    return NextResponse.json({ error: "Já existe um cadastro com essas informações." }, { status: 409 });
+  }
+
+  if (errorCode === "23503") {
+    return NextResponse.json({ error: "Este item está em uso e não pode ser removido ou relacionado dessa forma." }, { status: 409 });
   }
   
   // Database syntax/query error

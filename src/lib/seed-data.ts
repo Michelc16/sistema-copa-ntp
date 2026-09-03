@@ -1,4 +1,4 @@
-import type { Match, Player, Team, Tournament } from "./types";
+import type { Match, Player, Team, Tournament, TournamentPhase } from "./types";
 
 export const tournamentSeed: Tournament = {
   id: "copa-ntp-2026",
@@ -17,13 +17,14 @@ export const tournamentSeed: Tournament = {
     format: [
       "Todos os jogos serão disputados em melhor de 3 sets.",
       "Cada set será disputado até 25 pontos, com diferença mínima de 2 pontos.",
-      "O formato vale para fase classificatória, semifinais, disputa de 3º lugar e final.",
+      "O formato vale para fase classificatória, quartas de final, semifinais, disputa de 3º lugar e final.",
     ],
     competition: [
       "Participação de 8 equipes, com 7 atletas por equipe.",
       "Competição dividida em 2 grupos com 4 equipes cada.",
       "Todas as equipes deverão possuir a mesma quantidade de atletas femininas.",
-      "Os dois primeiros colocados de cada grupo avançam às semifinais.",
+      "Todas as equipes avançam às quartas de final.",
+      "Nas quartas, o 1º colocado de cada grupo enfrenta o 4º do outro grupo, e o 2º enfrenta o 3º do outro grupo.",
     ],
     infractions: [
       "Invasão da linha no saque.",
@@ -51,6 +52,14 @@ export const tournamentSeed: Tournament = {
     ],
   },
 };
+
+export const phaseSeeds: TournamentPhase[] = [
+  { id: "group", tournamentId: tournamentSeed.id, name: "Fase de grupos", kind: "group", sortOrder: 1, active: true },
+  { id: "quarterfinal", tournamentId: tournamentSeed.id, name: "Quartas de final", kind: "knockout", sortOrder: 2, active: true },
+  { id: "semifinal", tournamentId: tournamentSeed.id, name: "Semifinal", kind: "knockout", sortOrder: 3, active: true },
+  { id: "third_place", tournamentId: tournamentSeed.id, name: "3º lugar", kind: "knockout", sortOrder: 4, active: true },
+  { id: "final", tournamentId: tournamentSeed.id, name: "Final", kind: "knockout", sortOrder: 5, active: true },
+];
 
 const teamDefinitions = [
   { code: "A1", groupName: "A", color: "#f4d40b", players: ["David Samuel", "Nathalia Thaty", "Ricardo Rodrigues", "Michel Cardoso", "Tiago Matiole", "Reinaldo", "Lucas Kumaira"] },
@@ -100,14 +109,18 @@ const matches: MatchSeedInput[] = [
   { id: "g6", phase: "group", groupName: "B", roundLabel: "2ª rodada", homeTeamId: "b1", awayTeamId: "b3", scheduledAt: "2026-09-26T09:30:00-03:00", sortOrder: 6 },
   { id: "g7", phase: "group", groupName: "A", roundLabel: "2ª rodada", homeTeamId: "a2", awayTeamId: "a4", scheduledAt: "2026-09-27T10:30:00-03:00", sortOrder: 7 },
   { id: "g8", phase: "group", groupName: "B", roundLabel: "2ª rodada", homeTeamId: "b2", awayTeamId: "b4", scheduledAt: "2026-09-27T11:30:00-03:00", sortOrder: 8 },
-  { id: "g9", phase: "group", groupName: "A", roundLabel: "3ª rodada", homeTeamId: "a1", awayTeamId: "a4", scheduledAt: "2026-10-31T08:30:00-03:00", sortOrder: 9 },
-  { id: "g10", phase: "group", groupName: "B", roundLabel: "3ª rodada", homeTeamId: "b1", awayTeamId: "b4", scheduledAt: "2026-10-31T09:30:00-03:00", sortOrder: 10 },
-  { id: "g11", phase: "group", groupName: "A", roundLabel: "3ª rodada", homeTeamId: "a2", awayTeamId: "a3", scheduledAt: "2026-11-01T10:30:00-03:00", sortOrder: 11 },
-  { id: "g12", phase: "group", groupName: "B", roundLabel: "3ª rodada", homeTeamId: "b2", awayTeamId: "b3", scheduledAt: "2026-11-01T11:30:00-03:00", sortOrder: 12 },
-  { id: "sf1", phase: "semifinal", groupName: null, roundLabel: "Semifinal 1", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-11-28T08:30:00-03:00", sortOrder: 13, notes: "1º do Grupo A × 2º do Grupo B" },
-  { id: "sf2", phase: "semifinal", groupName: null, roundLabel: "Semifinal 2", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-11-29T10:30:00-03:00", sortOrder: 14, notes: "1º do Grupo B × 2º do Grupo A" },
-  { id: "third", phase: "third_place", groupName: null, roundLabel: "Disputa de 3º lugar", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-12-05T08:30:00-03:00", sortOrder: 15, notes: "Perdedor da Semifinal 1 × Perdedor da Semifinal 2" },
-  { id: "final", phase: "final", groupName: null, roundLabel: "Grande final", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-12-06T10:30:00-03:00", sortOrder: 16, notes: "Vencedor da Semifinal 1 × Vencedor da Semifinal 2" },
+  { id: "g9", phase: "group", groupName: "A", roundLabel: "3ª rodada", homeTeamId: "a2", awayTeamId: "a3", scheduledAt: "2026-10-31T08:30:00-03:00", sortOrder: 9 },
+  { id: "g10", phase: "group", groupName: "B", roundLabel: "3ª rodada", homeTeamId: "b2", awayTeamId: "b3", scheduledAt: "2026-10-31T09:30:00-03:00", sortOrder: 10 },
+  { id: "g11", phase: "group", groupName: "B", roundLabel: "3ª rodada", homeTeamId: "b1", awayTeamId: "b4", scheduledAt: "2026-11-01T10:30:00-03:00", sortOrder: 11 },
+  { id: "g12", phase: "group", groupName: "A", roundLabel: "3ª rodada", homeTeamId: "a1", awayTeamId: "a4", scheduledAt: "2026-11-01T11:30:00-03:00", sortOrder: 12 },
+  { id: "qf1", phase: "quarterfinal", groupName: null, roundLabel: "Quartas 1", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-11-28T08:30:00-03:00", sortOrder: 13, notes: "1º do Grupo A × 4º do Grupo B" },
+  { id: "qf2", phase: "quarterfinal", groupName: null, roundLabel: "Quartas 2", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-11-28T09:30:00-03:00", sortOrder: 14, notes: "2º do Grupo A × 3º do Grupo B" },
+  { id: "qf3", phase: "quarterfinal", groupName: null, roundLabel: "Quartas 3", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-11-29T10:30:00-03:00", sortOrder: 15, notes: "1º do Grupo B × 4º do Grupo A" },
+  { id: "qf4", phase: "quarterfinal", groupName: null, roundLabel: "Quartas 4", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-11-29T11:30:00-03:00", sortOrder: 16, notes: "2º do Grupo B × 3º do Grupo A" },
+  { id: "sf1", phase: "semifinal", groupName: null, roundLabel: "Semifinal 1", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-12-05T08:30:00-03:00", sortOrder: 17, notes: "Vencedor das Quartas 1 × Vencedor das Quartas 3" },
+  { id: "sf2", phase: "semifinal", groupName: null, roundLabel: "Semifinal 2", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-12-05T09:30:00-03:00", sortOrder: 18, notes: "Vencedor das Quartas 2 × Vencedor das Quartas 4" },
+  { id: "third", phase: "third_place", groupName: null, roundLabel: "Disputa de 3º lugar", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-12-06T10:30:00-03:00", sortOrder: 19, notes: "Perdedor da Semifinal 1 × Perdedor da Semifinal 2" },
+  { id: "final", phase: "final", groupName: null, roundLabel: "Grande final", homeTeamId: null, awayTeamId: null, scheduledAt: "2026-12-06T11:30:00-03:00", sortOrder: 20, notes: "Vencedor da Semifinal 1 × Vencedor da Semifinal 2" },
 ];
 
 export const matchSeeds: Match[] = matches.map((match) => ({

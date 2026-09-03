@@ -1,5 +1,5 @@
 export type MatchStatus = "scheduled" | "live" | "finished" | "postponed" | "cancelled";
-export type MatchPhase = "group" | "semifinal" | "third_place" | "final";
+export type PhaseKind = "group" | "knockout";
 
 export type SetScore = { home: number; away: number };
 
@@ -50,10 +50,19 @@ export type Team = {
   players: Player[];
 };
 
+export type TournamentPhase = {
+  id: string;
+  tournamentId: string;
+  name: string;
+  kind: PhaseKind;
+  sortOrder: number;
+  active: boolean;
+};
+
 export type Match = {
   id: string;
   tournamentId: string;
-  phase: MatchPhase;
+  phase: string;
   groupName: "A" | "B" | null;
   roundLabel: string;
   homeTeamId: string | null;
@@ -90,6 +99,7 @@ export type Standing = {
 export type TournamentView = {
   tournament: Tournament;
   teams: Team[];
+  phases: TournamentPhase[];
   matches: Match[];
   standings: { A: Standing[]; B: Standing[] };
   adjustments: StandingAdjustment[];
