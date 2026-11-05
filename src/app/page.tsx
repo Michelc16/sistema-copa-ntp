@@ -1,4 +1,6 @@
 import Image from "next/image";
+import { KnockoutHero, KnockoutSchedule } from "@/components/knockout-home";
+import { getHomeStage } from "@/lib/home-stage";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, CheckCircle2, MapPin, ShieldCheck, Trophy, UsersRound, Volleyball } from "lucide-react";
 import { MatchCard } from "@/components/match-card";
@@ -12,14 +14,15 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const data = await getTournamentView();
-  const nextMatches = data.matches.filter((match) => match.status === "scheduled" || match.status === "live" || match.status === "postponed").slice(0, 2);
-  const completed = data.matches.filter((match) => match.status === "finished").length;
+  const stage = getHomeStage(data);
+  const nextMatches = stage.upcoming.slice(0, 2);
+  const completed = stage.visibleMatches.filter((match) => match.status === "finished").length;
 
   return (
     <>
       <SiteHeader />
       <main>
-        <section className="hero">
+        {stage.knockout ? <KnockoutHero data={data} stage={stage} /> : <section className="hero">
           <div className="hero-glow hero-glow-one" /><div className="hero-glow hero-glow-two" />
           <div className="container hero-grid">
             <div className="hero-copy">
@@ -43,19 +46,20 @@ export default async function HomePage() {
               <div className="fair-play-card"><ShieldCheck size={27} /><span><b>Fair play</b>Respeito e inclusão</span></div>
             </div>
           </div>
-        </section>
+        </section>}
 
         {data.tournament.announcement && <div className="announcement"><div className="container"><span>COMUNICADO</span><p>{data.tournament.announcement}</p><Link href="/jogos">Ver agenda <ArrowRight size={15} /></Link></div></div>}
 
         <section className="stats-strip">
           <div className="container stats-grid">
-            <div><UsersRound /><strong>8</strong><span>equipes</span></div>
-            <div><Volleyball /><strong>56</strong><span>atletas</span></div>
-            <div><CalendarDays /><strong>{data.matches.length}</strong><span>partidas</span></div>
+            <div><UsersRound /><strong>{data.teams.filter((team) => team.active).length}</strong><span>equipes</span></div>
+            <div><Volleyball /><strong>{data.teams.filter((team) => team.active).reduce((total, team) => total + team.players.filter((player) => player.active).length, 0)}</strong><span>atletas</span></div>
+            <div><CalendarDays /><strong>{stage.visibleMatches.length}</strong><span>partidas</span></div>
             <div><Trophy /><strong>{completed}</strong><span>resultados</span></div>
           </div>
         </section>
 
+        {stage.knockout ? <KnockoutSchedule data={data} stage={stage} /> : <>
         <section className="section">
           <div className="container">
             <div className="section-heading"><div><span className="eyebrow">Agenda oficial</span><h2>Próximos jogos</h2><p>Horários e confrontos atualizados pela organização.</p></div><Link href="/jogos" className="text-link">Ver todos <ArrowRight size={17} /></Link></div>
@@ -70,6 +74,8 @@ export default async function HomePage() {
           </div>
         </section>
 
+        </>}
+
         <section className="section values-section">
           <div className="container values-grid">
             <div><span className="eyebrow">Muito além do placar</span><h2>Uma copa feita para todo mundo.</h2><p>Competição, diversidade e amizade dividindo a mesma quadra.</p><Link href="/regras" className="button button-primary">Conhecer o regulamento</Link></div>
@@ -79,12 +85,12 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="section media-section">
+        {!stage.knockout && <section className="section media-section">
           <div className="container media-grid">
             <div className="media-copy"><span className="eyebrow">Informação oficial</span><h2>Leve a Copa NTP com você</h2><p>Consulte jogos, regras, equipes e resultados em qualquer celular. O site é público e não exige cadastro.</p><div className="bullet-list"><span><CheckCircle2 /> Classificação automática</span><span><CheckCircle2 /> Elencos completos</span><span><CheckCircle2 /> Resultados por set</span></div></div>
             <div className="poster-frame"><Image src="/cartaz-agosto.jpeg" alt="Cartaz Jogos de Agosto da 4ª Copa NTP" width={1536} height={1024} /></div>
           </div>
-        </section>
+        </section>}
       </main>
       <SiteFooter />
     </>

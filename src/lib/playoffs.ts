@@ -18,18 +18,23 @@ export function matchResult(match: Match) {
   };
 }
 
-export function resolvePlayoffs(teams: Team[], matches: Match[], adjustments: StandingAdjustment[], phases: TournamentPhase[]): Match[] {
-  const resolved = matches.map((match) => ({ ...match }));
+export function hasCompletedGroups(teams: Team[], matches: Match[], phases: TournamentPhase[]): boolean {
   const groupIds = new Set(phases.filter((phase) => phase.kind === "group").map((phase) => phase.id));
   const groups = matches.filter((match) => groupIds.has(match.phase));
-  const standings = calculateStandings(teams, matches, adjustments, groupIds);
   // Require every round-robin pairing, not just the games currently present.
-  const complete = (["A", "B"] as const).every((group) => {
+  return (["A", "B"] as const).every((group) => {
     const members = teams.filter((team) => team.active && team.groupName === group);
     return members.length === 4 && members.every((team, index) => members.slice(index + 1).every((other) =>
       groups.some((match) => matchResult(match) && [match.homeTeamId, match.awayTeamId].includes(team.id) && [match.homeTeamId, match.awayTeamId].includes(other.id)),
     ));
   }) && groups.length > 0 && groups.every((match) => matchResult(match));
+}
+
+export function resolvePlayoffs(teams: Team[], matches: Match[], adjustments: StandingAdjustment[], phases: TournamentPhase[]): Match[] {
+  const resolved = matches.map((match) => ({ ...match }));
+  const groupIds = new Set(phases.filter((phase) => phase.kind === "group").map((phase) => phase.id));
+  const standings = calculateStandings(teams, matches, adjustments, groupIds);
+  const complete = hasCompletedGroups(teams, matches, phases);
   const round = (phase: string) => resolved.filter((match) => match.phase === phase).sort((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id));
   const fill = (match: Match | undefined, home: string | null, away: string | null) => {
     if (!match) return;

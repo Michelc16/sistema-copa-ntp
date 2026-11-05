@@ -118,3 +118,9 @@ O formato oficial usa dois grupos de quatro equipes. Quando todos os jogos dos g
 Em **Admin → Fases e jogos**, a opção **Automática** mostra a equipe calculada. Escolher uma equipe fixa aquela vaga manualmente; selecionar Automática novamente restaura o cálculo. As alterações aparecem na classificação, no calendário e na página inicial. Ao salvar um jogo com placar ou em andamento, as equipes são gravadas para que correções posteriores na classificação não atribuam o resultado a outras equipes. Se uma correção afetar um confronto já iniciado, revise suas equipes manualmente.
 
 A atualização é compatível com o banco existente e não requer executar o setup novamente. As vagas automáticas são calculadas ao carregar os dados, inclusive para uma fase de grupos encerrada antes desta atualização. Os confrontos usam a ordem de cadastro dentro das fases oficiais (`quarterfinal`, `semifinal`, `final`, `third_place`), independentemente de remarcações de horário. Fases personalizadas e jogos excluídos devem ser cadastrados e organizados no painel.
+
+## Página inicial durante o mata-mata
+
+Após a conclusão válida de todos os jogos dos grupos, a home troca as tabelas por uma abertura dedicada à fase atual, com confronto em destaque, equipes, horário, local e acesso à programação. A fase destacada avança automaticamente de quartas para semifinais e decisões; final e terceiro lugar aparecem juntos. Jogos ao vivo têm prioridade no destaque. Ao concluir as decisões, a página celebra a equipe campeã.
+
+As fases ocultas no admin não aparecem na programação da home. A classificação dos grupos continua disponível em `/classificacao`. O cartaz de agosto fica restrito à apresentação da fase de grupos. A nova apresentação usa os dados existentes e não exige alteração no banco. Prévia visual verificada com dados de teste em larguras de 1440, 390 e 320 pixels.
