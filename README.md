@@ -84,6 +84,7 @@ O site abrirá em `http://localhost:3000`. Se `DATABASE_URL` não estiver preenc
 ## Comandos de qualidade
 
 ```bash
+npm test
 npm run typecheck
 npm run lint
 npm run build
@@ -109,3 +110,11 @@ npm run build
 - O calendário distribui a fase de grupos em turno único, as quartas em 28/11 e 29/11, as semifinais em 05/12 e as decisões em 06/12.
 - Revise o nome da quadra, cidade e perfil de Instagram na primeira publicação.
 - Marque uma partida como **Encerrado** somente depois de preencher ao menos dois sets válidos; a classificação usa apenas partidas encerradas.
+
+## Chaveamento automático
+
+O formato oficial usa dois grupos de quatro equipes. Quando todos os jogos dos grupos têm resultados válidos, as vagas vazias das quartas são preenchidas automaticamente: 1º A × 4º B, 2º A × 3º B, 1º B × 4º A e 2º B × 3º A. As semifinais cruzam Q1 × Q3 e Q2 × Q4. Os vencedores seguem à final e os perdedores das semifinais disputam o terceiro lugar.
+
+Em **Admin → Fases e jogos**, a opção **Automática** mostra a equipe calculada. Escolher uma equipe fixa aquela vaga manualmente; selecionar Automática novamente restaura o cálculo. As alterações aparecem na classificação, no calendário e na página inicial. Ao salvar um jogo com placar ou em andamento, as equipes são gravadas para que correções posteriores na classificação não atribuam o resultado a outras equipes. Se uma correção afetar um confronto já iniciado, revise suas equipes manualmente.
+
+A atualização é compatível com o banco existente e não requer executar o setup novamente. As vagas automáticas são calculadas ao carregar os dados, inclusive para uma fase de grupos encerrada antes desta atualização. Os confrontos usam a ordem de cadastro dentro das fases oficiais (`quarterfinal`, `semifinal`, `final`, `third_place`), independentemente de remarcações de horário. Fases personalizadas e jogos excluídos devem ser cadastrados e organizados no painel.

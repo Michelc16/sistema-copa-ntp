@@ -1,3 +1,4 @@
+import { resolvePlayoffs } from "./playoffs";
 import { db, hasDatabase } from "./db";
 import { matchSeeds, phaseSeeds, teamSeeds, tournamentSeed } from "./seed-data";
 import { calculateStandings } from "./standings";
@@ -44,7 +45,7 @@ export function normalizeDateOnly(value: Date | string) {
   return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
 }
 
-export async function getTournamentView(): Promise<TournamentView> {
+export async function getTournamentView(resolveAutomatic = true): Promise<TournamentView> {
   if (!hasDatabase()) return demoView();
   try {
     const sql = db();
@@ -103,7 +104,7 @@ export async function getTournamentView(): Promise<TournamentView> {
     }));
     const adjustments: StandingAdjustment[] = adjustmentRows.map((row) => ({ teamId: row.team_id, points: row.points, reason: row.reason }));
     const groupPhaseIds = new Set(phases.filter((phase) => phase.kind === "group").map((phase) => phase.id));
-    return { tournament, teams, phases, matches, standings: calculateStandings(teams, matches, adjustments, groupPhaseIds), adjustments, usingDemoData: false };
+    return { tournament, teams, phases, matches: resolveAutomatic ? resolvePlayoffs(teams, matches, adjustments, phases) : matches, standings: calculateStandings(teams, matches, adjustments, groupPhaseIds), adjustments, usingDemoData: false };
   } catch (error) {
     console.error("Falha ao carregar o Neon; usando dados demonstrativos.", error);
     return demoView();

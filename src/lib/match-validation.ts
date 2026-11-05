@@ -16,6 +16,18 @@ export const matchMutationSchema = z.object({
   court: z.string().trim().min(1).max(100),
   notes: z.string().trim().max(300),
   sets: z.array(z.object({ home: z.number().int().min(0).max(99), away: z.number().int().min(0).max(99) })).max(3),
+}).superRefine((data, ctx) => {
+  if (data.status !== "finished") return;
+  let home = 0;
+  let away = 0;
+  for (const set of data.sets) {
+    if (home === 2 || away === 2 || set.home === set.away) {
+      ctx.addIssue({ code: "custom", message: "Placar inválido: não pode haver set empatado nem set após a segunda vitória." });
+      return;
+    }
+    if (set.home > set.away) home++; else away++;
+  }
+  if (home !== 2 && away !== 2) ctx.addIssue({ code: "custom", message: "Para encerrar o jogo, uma equipe precisa vencer dois sets." });
 }).refine(
   (data) => !data.homeTeamId || !data.awayTeamId || data.homeTeamId !== data.awayTeamId,
   { message: "As equipes devem ser diferentes." },

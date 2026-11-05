@@ -1,3 +1,4 @@
+import { prepareMatch } from "@/lib/prepare-match";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
@@ -11,8 +12,10 @@ export async function POST(request: Request) {
     const parsed = matchMutationSchema.safeParse(await request.json());
     if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados do jogo inválidos." }, { status: 400 });
 
-    const d = parsed.data;
     const id = randomUUID();
+    const prepared = await prepareMatch(id, parsed.data);
+    if (prepared.error) return NextResponse.json({ error: prepared.error }, { status: 400 });
+    const d = prepared.data!;
     const sql = db();
     const inserted = await sql.begin(async (tx) => {
       const phase = await tx<{ id: string }[]>`SELECT id FROM tournament_phases WHERE id=${d.phase} AND tournament_id=${tournamentSeed.id} FOR UPDATE`;

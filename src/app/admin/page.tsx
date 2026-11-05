@@ -8,6 +8,6 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   const session = await verifyAdmin();
   if (!session) redirect("/admin/login");
-  const data = await getTournamentView();
+  const data = await getTournamentView(false);
   return <AdminDashboard initialData={data} email={String(session.email ?? "Administrador")} />;
 }

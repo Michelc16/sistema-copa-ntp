@@ -1,3 +1,4 @@
+import { prepareMatch } from "@/lib/prepare-match";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiError, authorizeMutation } from "@/lib/http";
@@ -12,7 +13,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       return NextResponse.json({ error: firstError }, { status: 400 });
     }
     const { id } = await context.params;
-    const d = parsed.data;
+    const prepared = await prepareMatch(id, parsed.data);
+    if (prepared.error) return NextResponse.json({ error: prepared.error }, { status: 400 });
+    const d = prepared.data!;
     const sql = db();
     const result = await sql`UPDATE matches SET phase=${d.phase},group_name=${d.groupName},round_label=${d.roundLabel},home_team_id=${d.homeTeamId},away_team_id=${d.awayTeamId},scheduled_at=${d.scheduledAt},status=${d.status},court=${d.court},notes=${d.notes},sets=${sql.json(d.sets)} WHERE id=${id} RETURNING id`;
     if (!result.length) return NextResponse.json({ error: "Jogo não encontrado." }, { status: 404 });
